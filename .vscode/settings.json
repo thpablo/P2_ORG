@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "mmu.h": "c",
+        "constants.h": "c",
+        "memory.h": "c",
+        "stdlib.h": "c"
+    }
+}
