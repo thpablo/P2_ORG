@@ -10,8 +10,6 @@ bool canOnlyReplaceBlock(Line);
 int LFU(int, Cache*);
 int LRU(int, Cache*);
 
-int lineWhichWillLeave(int, Cache*);
-
 void updateMachineInfos(Machine*, WhereWasHit*, int);
 
 void moveLine();
@@ -40,7 +38,6 @@ int mappingMethods(int address, Cache *cache){
 
 int LFU(int address, Cache *cache)
 {
-    //LFU
     int posInCache = 0;
     for (int i = 0; i < cache->size; i++){
         //Se o bloco com mesma tag esta no cache

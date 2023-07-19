@@ -7,9 +7,6 @@
 #include <string.h>
 #include <time.h>
 
-Instruction *multiply(int , int );
-Instruction *generateMultiplicationInstructions(int , int );
-Instruction *fibo(int, int);
 
 int main(int argc, char**argv) {
 
@@ -39,7 +36,7 @@ int main(int argc, char**argv) {
     } else if(strcmp(argv[1], "multi") == 0){
         if(argc != 8){
             printf("Quantidade invalida de argumentos\n");
-            printf("Exemplo de execucao: ./exe multi 10 2 4 6 5 3\n");
+            printf("Exemplo de execucao: ./exe multi 10 2 4 6 5 3 (5 * 3)\n");
         }
         numOperations[0] = atoi(argv[6]);
         numOperations[1] = atoi(argv[7]);
@@ -48,11 +45,30 @@ int main(int argc, char**argv) {
     } else if(strcmp(argv[1], "fibo") == 0){
         if(argc != 7){
             printf("Quantidade invalida de argumentos\n");
-            printf("Exemplo de execucao: ./exe fibo 10 2 4 6 10\n");
+            printf("Exemplo de execucao: ./exe fibo 10 2 4 6 10 (fib de 10)\n");
         }
         numOperations[0] = atoi(argv[6]);
         memoriesSize[0]  = atoi(argv[2]);
         instructions = fibo(numOperations[0], 0);
+    } else if(strcmp(argv[1], "expo") == 0){
+        if(argc != 8){
+            printf("Quantidade invalida de argumentos\n");
+            printf("Exemplo de execucao: ./exe expo 10 2 4 6 2 4 (2^4)\n");
+        }
+        numOperations[0] = atoi(argv[6]);
+        numOperations[1] = atoi(argv[7]);
+        memoriesSize[0]  = atoi(argv[2]);
+        instructions = exponentiation(numOperations[0], numOperations[1]);
+    }
+    else if(strcmp(argv[1], "div") == 0){
+        if(argc != 8){
+            printf("Quantidade invalida de argumentos\n");
+            printf("Exemplo de execucao: ./exe div 10 2 4 6 8 2 (8/2)\n");
+        }
+        numOperations[0] = atoi(argv[6]);
+        numOperations[1] = atoi(argv[7]);
+        memoriesSize[0]  = atoi(argv[2]);
+        instructions = division(numOperations[0], numOperations[1]);
     }
     else {
         printf("Invalid option.\n");
@@ -69,143 +85,4 @@ int main(int argc, char**argv) {
     stop(&machine);
     printf("Stopping machine...\n");
     return 0;
-}
-
-/* Multiplicacao */
-Instruction *multiply(int n1, int n2){
-    Instruction *instructions = (Instruction *)malloc((n2 + 4) * sizeof(Instruction)); /*o tamanho dele será igual ao n2 + 4 operações manuais*/
-    Instruction *in = generateMultiplicationInstructions(0, n2);
-    
-    Instruction inst;
-    /*salvando o valor n1(informado) na ram 0*/
-
-    inst.opcode = 0;        //OPCode de mover
-    inst.add1.block = n1;   //add1.block = valor que vai ser salvo
-    inst.add2.block = 1;    //add2.block =  Bloco onde vai ser salvo n1
-    inst.add2.word = 0;     //add2.word =  Palavra onde vai ser salvo n1
-    instructions[0] = inst;
-
-    /*salvando o valor n2 (informado)na ram 1*/
-    inst.opcode = 0;
-    inst.add1.block = n2;
-    inst.add2.block = 1;    //add2.block =  Bloco onde vai ser salvo n1
-    inst.add2.word = 1;     //add2.word =  Palavra onde vai ser salvo n1
-    instructions[1] = inst;
-    
-    /*inicializando a ram 2, local onde será armazenado o valor dos calculos*/
-    inst.opcode = 0;
-    inst.add1.block = 0;
-    inst.add2.block = 1;    //add2.block =  Bloco onde vai ser salvo n1
-    inst.add2.word = 2;     //add2.word =  Palavra onde vai ser salvo n1
-    instructions[2] = inst;
-
-    /*criando o HALT*/
-    inst.opcode = -1;
-    inst.add1.block = -1; inst.add1.word = -1;
-    inst.add2.block = -1; inst.add2.word = -1;
-    inst.add3.block = -1; inst.add3.word = -1;
-
-    instructions[n2 + 3] = inst; // Colocando ultima posicao
-
-    int indexK = 0;
-    /*concatenando vetor*/
-    for (int k = 3; k < (n2 + 3); k++)
-    {
-        instructions[k] = in[indexK];
-    }
-
-    return instructions;
-}
-
-Instruction *generateMultiplicationInstructions(int address, int n)
-{
-    /*Alocação foi setada para o tamanho do n, pois é n é o tamanho das instruções realizadas pelo
-      FOR e o +4 é pq existem 4 instruções antes do FOR*/
-    Instruction *instructions = (Instruction *)malloc((n) * sizeof(Instruction));
-    Instruction inst;
-
-    for (int i = 0; i < n; i++)
-    {
-        /*A instrução pela os valores dentro do endereço informado + 2 e soma colocando o resulado dentro do campo 3*/
-        inst.opcode = 1;
-        inst.add1.block = 1;
-        inst.add1.word = 2;
-
-        inst.add2.block = 1;
-        inst.add2.word = 0;
-
-        inst.add3.block = 1;
-        inst.add3.word = 2;
-        instructions[i] = inst;
-
-    }
-
-    return instructions;
-}
-
-Instruction* fibo(int termos, int n){
-    /*1: Instrucao -> Levar valor num1 para memória ram */
-    /*2: Instrucao -> Reservar valor antigo para memória ram */
-    /*3: Instrucao -> Soma Fibonacci */
-    /*4: Finalizar máquina */
-
-     /* quantTermos é duplicado pois a cada soma, 
-     há uma instrucao de mover os valores
-     Duplicando a quantidade de operacoes. 
-     É somado 4 para instruções de Mover Dados/Finalizar operação. 
-     */
-    //Termos negativos
-    if(termos < 1)
-        termos = 1;
-
-    int quantTermos = 1 + (termos * 2);
-    Instruction* instructions = (Instruction*) malloc(quantTermos * sizeof(Instruction)); //Mudar quantidade de instrucoes
-
-
-    // Valor Resposta
-    instructions[n].opcode      = 0;
-    instructions[n].add1.block  = 0;   //Valor inicial -> 0
-    instructions[n].add2.block  = 1;  //Bloco para valor 
-    instructions[n].add2.word   = 0;
-
-
-    //Valor Fib Termo antigo
-    instructions[n + 1].opcode      = 0;
-    instructions[n + 1].add1.block  = 1; //Antigo valor = 1;
-    instructions[n + 1].add2.block  = 1; //Bloco para valor antigo;
-    instructions[n + 1].add2.word   = 1; //Palavra para o valor antigo
-
-    
-    for (int i = n + 2; i <  quantTermos - 2; i += 2){ //Pula-se dois pois há as instrucoes de soma e instrucoes de subtracao
-        //SOMAR OldValue com Res;
-        instructions[i].opcode = 1;
-        instructions[i].add1.block  = 1; //Soma valor antigo
-        instructions[i].add1.word   = 1;
-        instructions[i].add2.block  = 1; 
-        instructions[i].add2.word   = 0;
-
-        instructions[i].add3.block  = 1; 
-        instructions[i].add3.word   = 1; //Armazena em Res
-
-        //SUBTRAIR Res com OldValue, resultado armazenado em OldValue;
-        instructions[i + 1].opcode = 2;
-        instructions[i + 1].add1.block  = 1; 
-        instructions[i + 1].add1.word   = 0;
-
-        instructions[i + 1].add2.block  = 1; 
-        instructions[i + 1].add2.word   = 1;
-
-        instructions[i + 1].add3.block  = 1; 
-        instructions[i + 1].add3.word   = 0;
-    }
-
-    instructions[quantTermos - 1].opcode = -1;
-    instructions[quantTermos - 1].add1.block = -1;
-    instructions[quantTermos - 1].add1.word = -1;
-    instructions[quantTermos - 1].add2.block = -1;
-    instructions[quantTermos - 1].add2.word = -1;
-    instructions[quantTermos - 1].add3.block = -1;
-    instructions[quantTermos - 1].add3.word = -1; 
-
-   return instructions;
 }
