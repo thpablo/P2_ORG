@@ -9,6 +9,7 @@
 
 Instruction *multiply(int , int );
 Instruction *generateMultiplicationInstructions(int , int );
+Instruction *generateInstructionsFibonacci(int, int);
 
 int main(int argc, char**argv) {
 
@@ -36,10 +37,16 @@ int main(int argc, char**argv) {
     } else if (strcmp(argv[1], "file") == 0) {
         instructions = readInstructions(argv[2], memoriesSize);
     } else if(strcmp(argv[1], "multi") == 0){
+        printf("Digite dois numeros: ");
+        scanf("%d %d", &numOperations[0], &numOperations[1]);
         memoriesSize[0] = atoi(argv[2]);
-        instructions = multiply(200, 15);
+        instructions = multiply(numOperations[0], numOperations[1]);
+    } else if(strcmp(argv[1], "fibo") == 0){
+        printf("Digite o termo:");
+        scanf("%d", &numOperations[0]);
+        memoriesSize[0] = atoi(argv[2]);
+        instructions = generateInstructionsFibonacci(numOperations[0], 0);
     }
-
     else {
         printf("Invalid option.\n");
         return 0;
@@ -57,7 +64,7 @@ int main(int argc, char**argv) {
     return 0;
 }
 
-
+/* Multiplicacao */
 Instruction *multiply(int n1, int n2){
     Instruction *instructions = (Instruction *)malloc((n2 + 4) * sizeof(Instruction)); /*o tamanho dele será igual ao n2 + 4 operações manuais*/
     Instruction *in = generateMultiplicationInstructions(0, n2);
@@ -103,7 +110,6 @@ Instruction *multiply(int n1, int n2){
     return instructions;
 }
 
-
 Instruction *generateMultiplicationInstructions(int address, int n)
 {
     /*Alocação foi setada para o tamanho do n, pois é n é o tamanho das instruções realizadas pelo
@@ -128,4 +134,83 @@ Instruction *generateMultiplicationInstructions(int address, int n)
     }
 
     return instructions;
+}
+
+Instruction* generateInstructionsFibonacci(int termos, int n){
+    /*1: Instrucao -> Levar valor num1 para memória ram */
+    /*2: Instrucao -> Reservar valor antigo para memória ram */
+    /*3: Instrucao -> Soma Fibonacci */
+    /*4: Finalizar máquina */
+
+     /* quantTermos é duplicado pois a cada soma, 
+     há uma instrucao de mover os valores
+     Duplicando a quantidade de operacoes. 
+     É somado 4 para instruções de Mover Dados/Finalizar operação. 
+     */
+    //Termos negativos
+    if(termos < 1)
+        termos = 1;
+
+    int quantTermos = 1 + (termos * 2);
+    Instruction* instructions = (Instruction*) malloc(quantTermos * sizeof(Instruction)); //Mudar quantidade de instrucoes
+
+
+    // Valor Resposta
+    instructions[n].opcode      = 0;
+    instructions[n].add1.block  = 0;   //Valor inicial -> 0
+    instructions[n].add2.block  = 1;  //Bloco para valor 
+    instructions[n].add2.word   = 0;
+
+
+    //Valor Fib Termo antigo
+    instructions[n + 1].opcode      = 0;
+    instructions[n + 1].add1.block  = 1; //Antigo valor = 1;
+    instructions[n + 1].add2.block  = 1; //Bloco para valor antigo;
+    instructions[n + 1].add2.word   = 1; //Palavra para o valor antigo
+
+    
+    for (int i = n + 2; i <  quantTermos - 2; i += 2){ //Pula-se dois pois há as instrucoes de soma e instrucoes de subtracao
+        //SOMAR OldValue com Res;
+        instructions[i].opcode = 1;
+        instructions[i].add1.block  = 1; //Soma valor antigo
+        instructions[i].add1.word   = 1;
+        instructions[i].add2.block  = 1; 
+        instructions[i].add2.word   = 0;
+
+        instructions[i].add3.block  = 1; 
+        instructions[i].add3.word   = 1; //Armazena em Res
+
+        //SUBTRAIR Res com OldValue, resultado armazenado em OldValue;
+        instructions[i + 1].opcode = 2;
+        instructions[i + 1].add1.block  = 1; 
+        instructions[i + 1].add1.word   = 0;
+
+        instructions[i + 1].add2.block  = 1; 
+        instructions[i + 1].add2.word   = 1;
+
+        instructions[i + 1].add3.block  = 1; 
+        instructions[i + 1].add3.word   = 0;
+        printf("i: %d", i);
+    }
+
+    instructions[quantTermos - 1].opcode = -1;
+    instructions[quantTermos - 1].add1.block = -1;
+    instructions[quantTermos - 1].add1.word = -1;
+    instructions[quantTermos - 1].add2.block = -1;
+    instructions[quantTermos - 1].add2.word = -1;
+    instructions[quantTermos - 1].add3.block = -1;
+    instructions[quantTermos - 1].add3.word = -1;
+
+    for (int i=0; i< quantTermos; i++) {
+        printf("ADD1.B / W: %d  %d | ADD2.B / W: %d %d | ADD3.B / W: %d %d | OPCODE: %d\n",
+        instructions[i].add1.block,
+        instructions[i].add1.word,
+        instructions[i].add2.block,
+        instructions[i].add2.word,
+        instructions[i].add3.block,
+        instructions[i].add3.word,
+        instructions[i].opcode);
+    }
+
+   return instructions;
 }
