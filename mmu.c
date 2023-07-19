@@ -4,53 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-/* Fila para FIFO 
-typedef struct{
-    int posCacheArray;
-    Line lineInPosCache;
-} PosCache;
-
-typedef struct {
-    PosCache *arrayPos;
-    int start, end;
-    int tamVet;
-} ArrayCache;
-
-//tamVet = machine->l1/2
-ArrayCache *startQueue(int tamVet){
-    ArrayCache *queue = (ArrayCache *) malloc(sizeof(ArrayCache));
-    queue->arrayPos = (PosCache *) malloc(sizeof(PosCache) * tamVet);
-    queue->start = 0;
-    queue->end = 0;
-    queue->tamVet = tamVet;
-
-    return queue;
-}
-
-
-void enqueue(ArrayCache *queue, PosCache item) {
-    if ((queue->end + 1) % queue->tamVet == queue->start) {
-        printf("Fila cheia. Não é possível adicionar mais elementos.\n");
-        return;
-    }
-
-    queue->arrayPos[queue->end] = item;
-    queue->end = (queue->end + 1) % queue->tamVet;
-}
-
-PosCache dequeue(ArrayCache *queue) {
-    if (queue->start == queue->end) {
-        printf("Fila vazia. Não é possível remover elementos.\n");
-        PosCache emptyPosCache;
-        emptyPosCache.posCacheArray = -1;
-        return emptyPosCache;
-    }
-
-    PosCache item = queue->arrayPos[queue->start];
-    queue->start = (queue->start + 1) % queue->tamVet;
-    return item;
-}
-*/
 bool canOnlyReplaceBlock(Line);
 
 int memoryCacheMapping(int, Cache*);
@@ -73,6 +26,20 @@ char* convertToString(WhereWasHit whereWasHit) {
             return "RAM";
     }
 }
+int memoryCacheMapping(int address, Cache *cache)
+{
+    //LFU
+    int posInCache = 0;
+    for (int i = 0; i < cache->size; i++)
+        {
+        if ( cache->lines[posInCache].quantUsed > cache->lines[i].quantUsed)
+            posInCache = i;
+
+        if (cache->lines[i].tag == address)
+            return i;
+    }
+    return posInCache;
+}
 
 Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit) {
     // Strategy => write back
@@ -84,6 +51,7 @@ Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit
     Line* cache1 = machine->l1.lines;
     Line* cache2 = machine->l2.lines;
     Line* cache3 = machine->l3.lines;
+    Line* lineUsed = NULL;
     MemoryBlock* RAM = machine->ram.blocks;
     int cost = 0;
 
@@ -95,37 +63,23 @@ Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit
     } else if (cache2[l2pos].tag == add.block) { 
         /* Block is in memory cache L2 */
         cache2[l2pos].tag = add.block;
+        cache2[l2pos].updated = false;
         cost = COST_ACCESS_L1 + COST_ACCESS_L2;
         *whereWasHit = L2Hit;
-        // Just works for Direct Mapping
-        {
-            Line tmp = cache1[l1pos];
-            cache1[l1pos] = cache2[l2pos];
-            int l2pos = lineWhichWillLeave(tmp.tag, &machine->l2); /* Need to check the position of the block that will leave the L1 */
-            if (!canOnlyReplaceBlock(cache2[l2pos])) { 
-                RAM[cache2[l2pos].tag] = cache2[l2pos].block;
-            }
-            cache2[l2pos] = tmp;
-        }         
+        lineUsed = &(cache2[l2pos]);
+        lineUsed->quantUsed += 1;
     } else if (cache3[l3pos].tag == add.block) { 
         /* Block is in memory cache L3 */
         cache3[l3pos].tag = add.block;
+        cache3[l3pos].updated = false;
         cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_L3;
         *whereWasHit = L3Hit;
-        // Just works for Direct Mapping
-        {
-            Line tmp2 = cache2[l2pos];
-            cache2[l2pos] = cache3[l3pos];
-            int l3pos = lineWhichWillLeave(tmp2.tag, &machine->l3); /* Need to check the position of the block that will leave the L1 */
-            if (!canOnlyReplaceBlock(cache3[l3pos])) { 
-                RAM[cache3[l3pos].tag] = cache3[l3pos].block;
-            }
-            cache3[l3pos] = tmp2;
-        }
+        lineUsed = &(cache3[l3pos]);
+        lineUsed->quantUsed += 1;
     } else { 
         /* Block only in memory RAM, need to bring it to cache and manipulate the blocks */
-        l2pos = lineWhichWillLeave(cache1[l1pos].tag, &machine->l2); /* Need to check the position of the block that will leave the L1 */
-        l3pos = lineWhichWillLeave(cache2[l2pos].tag, &machine->l3);
+        l2pos = memoryCacheMapping(cache1[l1pos].tag, &machine->l2); /* Need to check the position of the block that will leave the L1 */
+        l3pos = memoryCacheMapping(cache2[l2pos].tag, &machine->l3);
         if (!canOnlyReplaceBlock(cache1[l1pos])) { 
             /* The block on cache L1 cannot only be replaced, the memories must be updated */
             if (!canOnlyReplaceBlock(cache2[l2pos])){ 
@@ -143,8 +97,17 @@ Line* MMUSearchOnMemorys(Address add, Machine* machine, WhereWasHit* whereWasHit
         cost = COST_ACCESS_L1 + COST_ACCESS_L2 + COST_ACCESS_L3 + COST_ACCESS_RAM;
         *whereWasHit = RAMHit;
     }
+    /*  Se o bloco nao estiver em L1/L2/L3 -> primeiros IF's,
+        lineUsed esta com o valor inicial (NULL), atribui entao
+        cache1[l1pos] para ele
+    */
+
+    if(lineUsed == NULL){
+        lineUsed = &(cache1[l1pos]);
+        lineUsed->quantUsed += 1;
+    }
     updateMachineInfos(machine, whereWasHit, cost);
-    return &(cache1[l1pos]);
+    return lineUsed;
 }
 
 bool canOnlyReplaceBlock(Line line) {
@@ -155,15 +118,9 @@ bool canOnlyReplaceBlock(Line line) {
     return false;
 }
 
-int memoryCacheMapping(int address, Cache* cache) {
-    return address % cache->size;
-}
-
-int lineWhichWillLeave(int address, Cache* cache) {
-    return address % cache->size;
-}
 
 void updateMachineInfos(Machine* machine, WhereWasHit* whereWasHit, int cost) {
+
     switch (*whereWasHit) {
         case L1Hit:
             machine->hitL1 += 1;

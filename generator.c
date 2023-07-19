@@ -11,7 +11,7 @@ Instruction* generateRandomInstructions(int ramSize) {
     // 2 => opcode => subtract
     //-1 => halt
     
-    int n = 20;
+    int n = 10;
 
     Instruction* instructions = (Instruction*) malloc((n + 1) * sizeof(Instruction));
 
@@ -26,6 +26,18 @@ Instruction* generateRandomInstructions(int ramSize) {
     }
     instructions[n].opcode = -1;
     
+
+    for (int i=0; i<n; i++) {
+        printf("ADD1.B / W: %d  %d | ADD2.B / W: %d %d | ADD3.B / W: %d %d | OPCODE: %d\n",
+        instructions[i].add1.block,
+        instructions[i].add1.word,
+        instructions[i].add2.block,
+        instructions[i].add2.word,
+        instructions[i].add3.block,
+        instructions[i].add3.word,
+        instructions[i].opcode);
+    }
+
     return instructions;
 }
 

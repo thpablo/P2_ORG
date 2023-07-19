@@ -54,7 +54,7 @@ void executeInstruction(Machine* machine, int PC) {
             break;
         case 0: // Taking information to RAM
             #ifdef PRINT_LOG
-                printf("  > ATR (%4d) > ", add1.block);
+                printf("  > ATR (%4d) > ", add1.block); //diferenca
             #endif
             
             line = MMUSearchOnMemorys(add2, machine, &hit); /* Searching block on memories */
@@ -62,7 +62,7 @@ void executeInstruction(Machine* machine, int PC) {
                 printf("BLOCK[%s.%d.%d](%4d)\n", convertToString(hit), add2.block, add2.word, line->block.words[add2.word]);
             #endif
 
-            line->block.words[add2.word] = add1.block;
+            line->block.words[add2.word] = add1.block; //diferenca
             line->updated = true;
             break;
         case 1: // Sum
