@@ -9,13 +9,13 @@
 
 Instruction *multiply(int , int );
 Instruction *generateMultiplicationInstructions(int , int );
-Instruction *generateInstructionsFibonacci(int, int);
+Instruction *fibo(int, int);
 
 int main(int argc, char**argv) {
 
     srand(1507);   // Inicializacao da semente para os numeros aleatorios.
 
-    if (argc != 6) {
+    if (argc < 6) {
         printf("Numero de argumentos invalidos! Sao 5.\n");
         printf("Linha de execucao: ./exe TIPO_INSTRUCAO [TAMANHO_RAM|ARQUIVO_DE_INSTRUCOES] TAMANHO_L1 TAMANHO_L2 TAMANHO_L3\n");
         printf("\tExemplo 1 de execucao: ./exe random 10 2 4\n");
@@ -37,15 +37,22 @@ int main(int argc, char**argv) {
     } else if (strcmp(argv[1], "file") == 0) {
         instructions = readInstructions(argv[2], memoriesSize);
     } else if(strcmp(argv[1], "multi") == 0){
-        printf("Digite dois numeros: ");
-        scanf("%d %d", &numOperations[0], &numOperations[1]);
-        memoriesSize[0] = atoi(argv[2]);
+        if(argc != 8){
+            printf("Quantidade invalida de argumentos\n");
+            printf("Exemplo de execucao: ./exe multi 10 2 4 6 5 3\n");
+        }
+        numOperations[0] = atoi(argv[6]);
+        numOperations[1] = atoi(argv[7]);
+        memoriesSize[0]  = atoi(argv[2]);
         instructions = multiply(numOperations[0], numOperations[1]);
     } else if(strcmp(argv[1], "fibo") == 0){
-        printf("Digite o termo:");
-        scanf("%d", &numOperations[0]);
-        memoriesSize[0] = atoi(argv[2]);
-        instructions = generateInstructionsFibonacci(numOperations[0], 0);
+        if(argc != 7){
+            printf("Quantidade invalida de argumentos\n");
+            printf("Exemplo de execucao: ./exe fibo 10 2 4 6 10\n");
+        }
+        numOperations[0] = atoi(argv[6]);
+        memoriesSize[0]  = atoi(argv[2]);
+        instructions = fibo(numOperations[0], 0);
     }
     else {
         printf("Invalid option.\n");
@@ -136,7 +143,7 @@ Instruction *generateMultiplicationInstructions(int address, int n)
     return instructions;
 }
 
-Instruction* generateInstructionsFibonacci(int termos, int n){
+Instruction* fibo(int termos, int n){
     /*1: Instrucao -> Levar valor num1 para memória ram */
     /*2: Instrucao -> Reservar valor antigo para memória ram */
     /*3: Instrucao -> Soma Fibonacci */
@@ -190,7 +197,6 @@ Instruction* generateInstructionsFibonacci(int termos, int n){
 
         instructions[i + 1].add3.block  = 1; 
         instructions[i + 1].add3.word   = 0;
-        printf("i: %d", i);
     }
 
     instructions[quantTermos - 1].opcode = -1;
@@ -199,18 +205,7 @@ Instruction* generateInstructionsFibonacci(int termos, int n){
     instructions[quantTermos - 1].add2.block = -1;
     instructions[quantTermos - 1].add2.word = -1;
     instructions[quantTermos - 1].add3.block = -1;
-    instructions[quantTermos - 1].add3.word = -1;
-
-    for (int i=0; i< quantTermos; i++) {
-        printf("ADD1.B / W: %d  %d | ADD2.B / W: %d %d | ADD3.B / W: %d %d | OPCODE: %d\n",
-        instructions[i].add1.block,
-        instructions[i].add1.word,
-        instructions[i].add2.block,
-        instructions[i].add2.word,
-        instructions[i].add3.block,
-        instructions[i].add3.word,
-        instructions[i].opcode);
-    }
+    instructions[quantTermos - 1].add3.word = -1; 
 
    return instructions;
 }

@@ -23,6 +23,7 @@ void startCache(Cache* cache, int size) {
     for (int i=0;i<size;i++){
         cache->lines[i].tag = INVALID_ADD;
         cache->lines[i].quantUsed = 0;
+        cache->lines[i].tempInCache = 0;
     }
 
 }

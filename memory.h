@@ -20,6 +20,7 @@ typedef struct {
     int tag; /* Address of the block in memory RAM */
     bool updated;
     int quantUsed; //Quantidade usada para LFU
+    int tempInCache;
 } Line;
 
 typedef struct {
