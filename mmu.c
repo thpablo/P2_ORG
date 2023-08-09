@@ -44,7 +44,7 @@ int LFU(int address, Cache *cache)
         if (cache->lines[i].tag == address)
             return i;
 
-        if (cache->lines[posInCache].quantUsed > cache->lines[i].quantUsed)
+        if (cache->lines[posInCache].quantUsed < cache->lines[i].quantUsed)
             posInCache = i;
     }
     return posInCache;
